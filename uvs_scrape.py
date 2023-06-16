@@ -34,29 +34,29 @@ def request_cards_w_ids(list_of_ids, sesh):
 
     return list_o_returns
 
+""" Take in a response return the card data parsed out. Skip responses that don't actually contain card data.
+"""
 def parse_soup(response):
 
-    response = request_card_w_id("9167", session)
     soup = BeautifulSoup(response.text, 'html.parser')
+    
+    card_name = soup.select("div.card_title h1")    
+    #TODO Make sure the return value when we do this is handled in a good way
+    if (len(card_name) == 0): return
 
     dictionary = {
-        "card_name": soup.select("div.card_title h1")[0],
-        "random_stuff_1": soup.select("div.card_division.cd1")[0], # I actually don't know what this will be hitting
-        "card_text": soup.select("#text")[0],
-        "int_values": soup.select("div.card_division.cd3")[0]
+        "card_name": card_name[0].text.strip(),
+        "random_stuff_1": soup.select("div.card_division.cd1")[0].text.strip(), # I actually don't know what this will be hitting
+        "card_text": soup.select("#text")[0].text.strip(),
+        "int_values": soup.select("div.card_division.cd3")[0].text.strip()
     }
     
     return dictionary
 
-
-request = request_card_w_id("9167", session)
-dictionary = parse_soup(request)
-
+response = request_card_w_id("1", session)
+dictionary = parse_soup(response)
 
 print(dictionary["card_name"])
-print("\n")
 print(dictionary["random_stuff_1"])
-print("\n")
 print(dictionary["card_text"])
-print("\n")
 print(dictionary["int_values"])
