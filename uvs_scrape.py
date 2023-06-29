@@ -76,17 +76,24 @@ def parse_soup(response):
     return #dictionary
 
 used_ids = []
+status = -1
 
 for i in range(0,13000):
-    response = request_card_w_id("1", session).text
+    
+    response = request_card_w_id(str(i), session).text
     temp_soup = BeautifulSoup(response, 'html.parser')
-    temp = temp_soup.select("div.card_image")
+    temp = temp_soup.select("div.card_infos")
+    
     if len(temp) == 0:
+        status = 0 
         used_ids.append(0)
     if len(temp) == 1:
+        status = 1
         used_ids.append(1)
     if len(temp) > 1:
+        status = -1
         used_ids.append(2)
+    print("exiting iteration #{itr}\nvalue: {v}".format(itr = i, v = status))
 
 print(used_ids)
 
