@@ -8,8 +8,6 @@ from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 
 
-
-
 import socket
 from urllib3.connection import HTTPConnection
 
@@ -29,6 +27,22 @@ headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 base_url = "https://www.uvsultra.online"
 showcard_url = "/showcard.php?id="
 
+""" Retrieves ids from premade file.
+"""
+def get_ids():
+
+    existing_ids = []
+    f = open("uvs_ids.txt", "r")
+    id_file = f.readlines()
+
+    for line in id_file:
+        existing_ids.append(int(line.strip()))
+
+    f.close()
+
+    return existing_ids
+
+
 """ Pass the id in as a string for the sake of typing issues and your sanity.
     This requests all of the relevant data from an individual card.
 """
@@ -38,6 +52,7 @@ def request_card_w_id(id, sesh):
     response = sesh.get(request_url)
 
     return response
+
 
 """ Calls request_card_w_id for every id in some crafted list of ids 
 """
@@ -75,27 +90,32 @@ def parse_soup(response):
     
     return #dictionary
 
-used_ids = []
-status = -1
 
-for i in range(0,13000):
-    
-    response = request_card_w_id(str(i), session).text
+id_list = get_ids()
+id_iteration = 0
+
+response = request_card_w_id(str(id_list[0]), session).text
+temp_soup = BeautifulSoup(response, 'html.parser')
+
+card_infos = temp_soup.select("div.card_infos")
+card_name = temp_soup.select("div.card_infos h1")[0].text
+card_text = temp_soup.select("div.card_infos #text")[0].text
+card_fields = temp_soup.select("div.card_infos")[0].text
+
+print(card_infos)
+print("*************************")
+print("")
+
+"""
+for id in id_list:
+    id_iteration += 1
+    response = request_card_w_id(str(id), session).text
     temp_soup = BeautifulSoup(response, 'html.parser')
     temp = temp_soup.select("div.card_infos")
-    
-    if len(temp) == 0:
-        status = 0 
-        used_ids.append(0)
-    if len(temp) == 1:
-        status = 1
-        used_ids.append(1)
-    if len(temp) > 1:
-        status = -1
-        used_ids.append(2)
-    print("exiting iteration #{itr}\nvalue: {v}".format(itr = i, v = status))
 
-print(used_ids)
+    print("exiting iteration #{itr}".format(itr = id_iteration))
+"""
+
 
 
 """
