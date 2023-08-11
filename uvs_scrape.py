@@ -97,6 +97,8 @@ id_iteration = 0
 response = request_card_w_id(str(id_list[0]), session).text
 temp_soup = BeautifulSoup(response, 'html.parser')
 
+
+"""TODO: Figure out how to target the classes card_division cd<#> with BS"""
 card_infos = temp_soup.select("div.card_infos")
 card_name = temp_soup.select("div.card_infos h1")[0].text
 card_text = temp_soup.select("div.card_infos #text")[0].text
