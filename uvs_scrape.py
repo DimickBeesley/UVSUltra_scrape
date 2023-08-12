@@ -90,6 +90,34 @@ def parse_soup(response):
     
     return #dictionary
 
+def scrape_card():
+    
+    # fetch html
+
+    # get card type
+
+    card_type = "" # set card type
+
+    if card_type == "Character":
+        # handle_character()
+        pass
+    elif card_type == "Attack":
+        # handle_attack()
+        pass
+    else:
+        # handle_other()
+        pass
+
+    return
+
+def handle_character():
+    return
+
+def handle_attach():
+    return
+
+def handle_other():
+    return
 
 id_list = get_ids()
 id_iteration = 0
@@ -98,15 +126,23 @@ response = request_card_w_id(str(id_list[0]), session).text
 temp_soup = BeautifulSoup(response, 'html.parser')
 
 
-"""TODO: Figure out how to target the classes card_division cd<#> with BS"""
 card_infos = temp_soup.select("div.card_infos")
+
 card_name = temp_soup.select("div.card_infos h1")[0].text
-card_text = temp_soup.select("div.card_infos #text")[0].text
-card_fields = temp_soup.select("div.card_infos")[0].text
+card_divisions = temp_soup.select("div.card_infos div.card_division")
+card_division1 = card_divisions[0].text.strip() #Set/Card number, Card type, Rarity, Format??? 
+card_division2 = card_divisions[1].text.strip() #Functionality of the card (enhances, responses, etc.)
+card_division3 = card_divisions[2].text.strip() #Contol, block mod, attack or not???, Hand size, Vitality
+
+card_symbols_html = temp_soup.select("div.card_infos img")
+card_symbols = ""
+for symbol in card_symbols_html:
+    card_symbols += symbol["alt"]
+
 
 print(card_infos)
 print("*************************")
-print("")
+
 
 """
 for id in id_list:
