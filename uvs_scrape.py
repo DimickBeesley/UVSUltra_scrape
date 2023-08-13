@@ -90,25 +90,102 @@ def parse_soup(response):
     
     return #dictionary
 
-def scrape_card():
+
+
+
+
+
+def parse_card_info(soup):
     
-    # fetch html
+    """ BREAK UP THE RAW HTML INTO BITES SIZED PIECES """
 
+    # Raw Html
+    card_name = soup.select("div.card_infos h1")[0].text
+    card_image_src = soup.select("div.card_image img")[0]["src"]
+
+    #The different card divisions from the raw HTML
+    card_divisions = soup.select("div.card_infos div.card_division")
+    
+    #Set/Card number, Card type, Rarity, Format???
+    card_division_1 = card_divisions[0].text.strip()  
+    #Functionality of the card (enhances, responses, etc.)
+    card_division_2 = card_divisions[1].text.strip() 
+    #Contol, block mod, attack or not???, Hand size, Vitality
+    card_division_3 = card_divisions[2].text.strip()
+
+    # Different pieces of information from card division parsed and thrown into string arrays
+    cd1_parsed = parse_card_division(card_division_1)
+    for i in range(0, 3):
+        cd1_parsed.remove(cd1_parsed[-1])
+
+    cd2_parsed = parse_card_division(card_division_2)
+    cd2_parsed[0:-1] = ["/".join(cd2_parsed[0:-1])]
+
+    cd3_parsed = parse_card_division(card_division_3)
+
+    
+
+    # Symbols
+    card_symbols_html = soup.select("div.card_infos img")
+    card_symbols = ""
+    for symbol in card_symbols_html:
+        card_symbols += symbol["alt"] + "/"
+    card_symbols = card_symbols[0:-1]
+
+    hand_size = ""
+    vitality = ""
+
+    if len(cd3_parsed) == 5:
+        hand_size = cd3_parsed[4].split(":")[1].strip()[0]
+        vitality = cd3_parsed[4].split(":")[2].strip()[-2:]
     # get card type
+    card_type = cd1_parsed[1] # set card type
+    
+    attack_info = cd3_parsed[3].split(":")[1].strip()
+    speed = "none"
+    zone = "none"
+    damage = "none"
 
-    card_type = "" # set card type
+    if attack_info != "/":
+        speed = attack_info.split(" ")[0]
+        zone = attack_info.split(" ")[1]
+        damage = attack_info.split(" ")[3]
 
-    if card_type == "Character":
-        # handle_character()
-        pass
-    elif card_type == "Attack":
-        # handle_attack()
-        pass
-    else:
-        # handle_other()
-        pass
+    """ HANDLE INFORMATION BASED ON CARD TYPE """
 
-    return
+    card = {
+        "name"       : card_name,
+        "image"      : card_image_src,
+        "set-info"   : cd1_parsed[0],
+        "type"       : cd1_parsed[1],
+        "rarity"     : cd1_parsed[2],
+        "legality"   : cd1_parsed[3],
+        "abilities"  : cd2_parsed[0],
+        "errata"     : cd2_parsed[1],
+        "control"    : cd3_parsed[0].split(":")[1].strip(),
+        "difficulty" : cd3_parsed[1].split(":")[1].strip(),
+        "block"      : cd3_parsed[2].split(":")[1].strip(),
+        "speed"      : speed,
+        "zone"       : zone,
+        "damage"     : damage,
+        "hand-size"  : hand_size,
+        "vitality"   : vitality,
+        "symbols"    : card_symbols
+    }
+
+    return card
+
+def parse_card_division(card_division):
+    split = card_division.split("\n")
+    
+    while "" in split:
+        split.remove("")
+
+    for item in range(0, len(split)):
+        split[item] = split[item].strip()
+
+    return split
+
 
 def handle_character():
     return
@@ -119,29 +196,26 @@ def handle_attach():
 def handle_other():
     return
 
+
+
+
+
+
+
 id_list = get_ids()
 id_iteration = 0
 
-response = request_card_w_id(str(id_list[0]), session).text
-temp_soup = BeautifulSoup(response, 'html.parser')
+for i in range(0, 100):
+    response = request_card_w_id(str(id_list[-i]), session).text
+    temp_soup = BeautifulSoup(response, 'html.parser')
 
+    card_dict = parse_card_info(temp_soup)
 
-card_infos = temp_soup.select("div.card_infos")
+    for key in card_dict:
+        value = card_dict[key]
+        print("{k}: {v}".format(k = key, v = value))
 
-card_name = temp_soup.select("div.card_infos h1")[0].text
-card_divisions = temp_soup.select("div.card_infos div.card_division")
-card_division1 = card_divisions[0].text.strip() #Set/Card number, Card type, Rarity, Format??? 
-card_division2 = card_divisions[1].text.strip() #Functionality of the card (enhances, responses, etc.)
-card_division3 = card_divisions[2].text.strip() #Contol, block mod, attack or not???, Hand size, Vitality
-
-card_symbols_html = temp_soup.select("div.card_infos img")
-card_symbols = ""
-for symbol in card_symbols_html:
-    card_symbols += symbol["alt"]
-
-
-print(card_infos)
-print("*************************")
+    print("\n")
 
 
 """
@@ -152,13 +226,4 @@ for id in id_list:
     temp = temp_soup.select("div.card_infos")
 
     print("exiting iteration #{itr}".format(itr = id_iteration))
-"""
-
-
-
-"""
-print(dictionary["card_name"])
-print(dictionary["random_stuff_1"])
-print(dictionary["card_text"])
-print(dictionary["int_values"])
 """
