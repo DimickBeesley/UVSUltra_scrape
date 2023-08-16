@@ -1,16 +1,24 @@
-import pandas as pd
-import re
-
-import time
-import csv
-
+# For making requests
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 
-
+# Preventing connection issues from stopping the script
 import socket
 from urllib3.connection import HTTPConnection
 
+# Database
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+from bson import json_util
+
+
+# Functionally, constants for connecting to Mongodb
+MONGODB_HOST = 'localhost'
+MONGODB_PORT = 27017
+DB_NAME = "dotdeck"
+COLLECTION_NAME = "uvscards"
+
+# Some black magic that helps keep the connection from dropping while the script scrapes
 HTTPConnection.default_socket_options = (
     HTTPConnection.default_socket_options + [
         (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
@@ -42,7 +50,6 @@ def get_ids():
 
     return existing_ids
 
-
 """ Pass the id in as a string for the sake of typing issues and your sanity.
     This requests all of the relevant data from an individual card.
 """
@@ -53,8 +60,7 @@ def request_card_w_id(id, sesh):
 
     return response
 
-
-""" Calls request_card_w_id for every id in some crafted list of ids 
+""" Calls request_card_w_id for every id in some crafted list of ids to return a list of responses
 """
 def request_cards_w_ids(list_of_ids, sesh):
 
@@ -68,36 +74,12 @@ def request_cards_w_ids(list_of_ids, sesh):
 
     return list_o_returns
 
-""" Take in a response return the card data parsed out. Skip responses that don't actually contain card data.
+""" Takes in the soup. Returns the information as a dictionary
 """
-def parse_soup(response):
-
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    card_image = soup.select("div.card_image")    
-    #TODO Make sure the return value when we do this is handled in a good way
-    print(len(card_image))
-    #if (len(card_image) == 0): return
-
-    """
-    dictionary = {
-        "card_name": card_name[0].text.strip(),
-        "random_stuff_1": soup.select("div.card_division.cd1")[0].text.strip(), # I actually don't know what this will be hitting
-        "card_text": soup.select("#text")[0].text.strip(),
-        "int_values": soup.select("div.card_division.cd3")[0].text.strip()
-    }
-    """
-    
-    return #dictionary
-
-
-
-
-
-
 def parse_card_info(soup):
     
-    """ BREAK UP THE RAW HTML INTO BITES SIZED PIECES """
+    """ BREAK UP THE RAW HTML FOR EASIER PARSING 
+    """
 
     # Raw Html
     card_name = soup.select("div.card_infos h1")[0].text
@@ -123,35 +105,41 @@ def parse_card_info(soup):
 
     cd3_parsed = parse_card_division(card_division_3)
 
-    
 
-    # Symbols
-    card_symbols_html = soup.select("div.card_infos img")
-    card_symbols = ""
-    for symbol in card_symbols_html:
-        card_symbols += symbol["alt"] + "/"
-    card_symbols = card_symbols[0:-1]
 
-    hand_size = ""
-    vitality = ""
+    """ TURN THE RAW DATA INTO VARIABLES WE CAN POPULATE A DICTIONARY WITH 
+    """
 
-    if len(cd3_parsed) == 5:
-        hand_size = cd3_parsed[4].split(":")[1].strip()[0]
-        vitality = cd3_parsed[4].split(":")[2].strip()[-2:]
-    # get card type
-    card_type = cd1_parsed[1] # set card type
-    
+    # Variables for populating the dict we'll return
+    hand_size = "none"
+    vitality = "none"
     attack_info = cd3_parsed[3].split(":")[1].strip()
     speed = "none"
     zone = "none"
     damage = "none"
+    card_type = cd1_parsed[1] # set card type
+    card_symbols_html = soup.select("div.card_infos img")
+    card_symbols = ""
+    
+    # handles the seperate img tags to get the symbols
+    for symbol in card_symbols_html:
+        card_symbols += symbol["alt"] + "/"
+    card_symbols = card_symbols[0:-1]
 
+    # handles character information if character
+    if len(cd3_parsed) == 5:
+        hand_size = cd3_parsed[4].split(":")[1].strip()[0]
+        vitality = cd3_parsed[4].split(":")[2].strip()[-2:]
+    
+    # handles attack information if attack
     if attack_info != "/":
         speed = attack_info.split(" ")[0]
         zone = attack_info.split(" ")[1]
         damage = attack_info.split(" ")[3]
 
-    """ HANDLE INFORMATION BASED ON CARD TYPE """
+
+    """ POPULATE THE DICTIONARY FOR RETURN
+    """
 
     card = {
         "name"       : card_name,
@@ -175,6 +163,9 @@ def parse_card_info(soup):
 
     return card
 
+
+""" Breaks up some of the information that came in bigger chunks inside of the raw html
+"""
 def parse_card_division(card_division):
     split = card_division.split("\n")
     
@@ -187,20 +178,11 @@ def parse_card_division(card_division):
     return split
 
 
-def handle_character():
-    return
-
-def handle_attach():
-    return
-
-def handle_other():
-    return
 
 
 
-
-
-
+""" Funtionally, the main function
+"""
 
 id_list = get_ids()
 id_iteration = 0
@@ -217,13 +199,3 @@ for i in range(0, 100):
 
     print("\n")
 
-
-"""
-for id in id_list:
-    id_iteration += 1
-    response = request_card_w_id(str(id), session).text
-    temp_soup = BeautifulSoup(response, 'html.parser')
-    temp = temp_soup.select("div.card_infos")
-
-    print("exiting iteration #{itr}".format(itr = id_iteration))
-"""
