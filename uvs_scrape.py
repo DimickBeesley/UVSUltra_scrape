@@ -9,6 +9,9 @@ from urllib3.connection import HTTPConnection
 # Database
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+
+# JSON
+import json
 from bson import json_util
 
 
@@ -186,16 +189,26 @@ def parse_card_division(card_division):
 
 id_list = get_ids()
 id_iteration = 0
+card_dicts = []
 
-for i in range(0, 100):
-    response = request_card_w_id(str(id_list[-i]), session).text
+for id in id_list:
+    # get the soup
+    response = request_card_w_id(str(id), session).text
     temp_soup = BeautifulSoup(response, 'html.parser')
 
+    # parse the soup and add it to the list
     card_dict = parse_card_info(temp_soup)
+    card_dicts.append(card_dict)
 
+    # Output to keep me from wondering if everything is working correctly
     for key in card_dict:
         value = card_dict[key]
         print("{k}: {v}".format(k = key, v = value))
-
     print("\n")
+
+# Convert the dictionaries in card_dicts to json and write to json file
+with open("uvs_card_data.json", "w") as json_file:
+    json.dump(card_dicts, json_file)
+
+
 
