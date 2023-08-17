@@ -123,6 +123,23 @@ def parse_card_info(soup):
     card_type = cd1_parsed[1] # set card type
     card_symbols_html = soup.select("div.card_infos img")
     card_symbols = ""
+    setinfo = ""
+    card_type = ""
+    card_rarity = ""
+    legality = ""
+
+    
+    if len(cd1_parsed) > 3:
+        setinfo = cd1_parsed[0]
+        card_type = cd1_parsed[1]
+        card_rarity = cd1_parsed[2]
+        legality = cd1_parsed[3]
+    else: #exception where card doesn't have a rarity
+        setinfo = cd1_parsed[0]
+        card_type = cd1_parsed[1]
+        card_rarity = "none"
+        legality = cd1_parsed[2]
+
     
     # handles the seperate img tags to get the symbols
     for symbol in card_symbols_html:
@@ -135,7 +152,7 @@ def parse_card_info(soup):
         vitality = cd3_parsed[4].split(":")[2].strip()[-2:]
     
     # handles attack information if attack
-    if attack_info != "/":
+    if attack_info != "/" and len(attack_info.split(" ")) < 3:
         speed = attack_info.split(" ")[0]
         zone = attack_info.split(" ")[1]
         damage = attack_info.split(" ")[3]
@@ -143,14 +160,13 @@ def parse_card_info(soup):
 
     """ POPULATE THE DICTIONARY FOR RETURN
     """
-
     card = {
         "name"       : card_name,
         "image"      : card_image_src,
-        "set-info"   : cd1_parsed[0],
-        "type"       : cd1_parsed[1],
-        "rarity"     : cd1_parsed[2],
-        "legality"   : cd1_parsed[3],
+        "set-info"   : setinfo,
+        "type"       : card_type,
+        "rarity"     : card_rarity,
+        "legality"   : legality,
         "abilities"  : cd2_parsed[0],
         "errata"     : cd2_parsed[1],
         "control"    : cd3_parsed[0].split(":")[1].strip(),
@@ -180,6 +196,19 @@ def parse_card_division(card_division):
 
     return split
 
+""" Run the script for one id only for the sake of testing mostly
+"""
+def parse_card_w_id(target_card_id):
+    
+    response = request_card_w_id(str(target_card_id), session).text
+
+    temp_soup = BeautifulSoup(response, 'html.parser')
+    print(temp_soup.select("div.card_infos"))
+    print("***************")
+
+    target_card_info = parse_card_info(temp_soup)
+
+    return target_card_info
 
 
 
@@ -191,11 +220,20 @@ id_list = get_ids()
 id_iteration = 0
 card_dicts = []
 
+#parse_card_w_id(2739)
+
+
+
+""" """
 for id in id_list:
     # get the soup
     response = request_card_w_id(str(id), session).text
     temp_soup = BeautifulSoup(response, 'html.parser')
-
+    
+    # tracking progress
+    print(str(id_list.index(id)) + "/" + str(len(id_list)))
+    print("id: {i}".format(i = id))
+    
     # parse the soup and add it to the list
     card_dict = parse_card_info(temp_soup)
     card_dicts.append(card_dict)
@@ -209,6 +247,4 @@ for id in id_list:
 # Convert the dictionaries in card_dicts to json and write to json file
 with open("uvs_card_data.json", "w") as json_file:
     json.dump(card_dicts, json_file)
-
-
 
