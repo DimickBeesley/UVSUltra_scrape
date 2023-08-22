@@ -38,8 +38,7 @@ headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 base_url = "https://www.uvsultra.online"
 showcard_url = "/showcard.php?id="
 
-""" Retrieves ids from premade file.
-"""
+""" Retrieves ids from premade file. """
 def get_ids():
 
     existing_ids = []
@@ -53,9 +52,9 @@ def get_ids():
 
     return existing_ids
 
+
 """ Pass the id in as a string for the sake of typing issues and your sanity.
-    This requests all of the relevant data from an individual card.
-"""
+    This requests all of the relevant data from an individual card. """
 def request_card_w_id(id, sesh):
     
     request_url = base_url + showcard_url + id
@@ -63,8 +62,8 @@ def request_card_w_id(id, sesh):
 
     return response
 
-""" Calls request_card_w_id for every id in some crafted list of ids to return a list of responses
-"""
+
+""" Calls request_card_w_id for every id in some crafted list of ids to return a list of responses """
 def request_cards_w_ids(list_of_ids, sesh):
 
     list_o_returns = []
@@ -77,8 +76,8 @@ def request_cards_w_ids(list_of_ids, sesh):
 
     return list_o_returns
 
-""" Takes in the soup. Returns the information as a dictionary
-"""
+
+""" Takes in the soup. Returns the information as a dictionary """
 def parse_card_info(soup):
     
     """ BREAK UP THE RAW HTML FOR EASIER PARSING 
@@ -183,8 +182,7 @@ def parse_card_info(soup):
     return card
 
 
-""" Breaks up some of the information that came in bigger chunks inside of the raw html
-"""
+""" Breaks up some of the information that came in bigger chunks inside of the raw html """
 def parse_card_division(card_division):
     split = card_division.split("\n")
     
@@ -196,8 +194,8 @@ def parse_card_division(card_division):
 
     return split
 
-""" Run the script for one id only for the sake of testing mostly
-"""
+
+""" Run the script for one id only for the sake of testing mostly """
 def parse_card_w_id(target_card_id):
     
     response = request_card_w_id(str(target_card_id), session).text
@@ -211,40 +209,55 @@ def parse_card_w_id(target_card_id):
     return target_card_info
 
 
+""" Makes calls to the other functions to request all of the card information  
+    and save it to a json file in the current directory """
+def execute_scrape(id_list, session):
+    for id in id_list:
+        # get the soup
+        response = request_card_w_id(str(id), session).text
+        temp_soup = BeautifulSoup(response, 'html.parser')
+        
+        # tracking progress
+        print(str(id_list.index(id)) + "/" + str(len(id_list)))
+        print("id: {i}".format(i = id))
+        
+        # parse the soup and add it to the list
+        card_dict = parse_card_info(temp_soup)
+        card_dicts.append(card_dict)
+
+        # Output to keep me from wondering if everything is working correctly
+        for key in card_dict:
+            value = card_dict[key]
+            print("{k}: {v}".format(k = key, v = value))
+        print("\n")
+
+    # Convert the dictionaries in card_dicts to json and write to json file
+    with open("uvs_card_data.json", "w") as json_file:
+        json.dump(card_dicts, json_file)
+
+    json_file.close()
+
+""" Connects to the mongodb database """
+""" https://stackoverflow.com/questions/22139173/how-to-connect-to-mongo-database-locally-using-python """
+def getDatas():
+    connection = MongoClient(MONGODB_HOST, MONGODB_PORT)
+    collection = connection[DB_NAME][COLLECTION_NAME]
+    projects = collection.find()
+    json_projects = []
+    for project in projects:
+        json_projects.append(project)
+    json_projects = json.dumps(json_projects, default=json_util.default)
+    connection.close()
+    return json_projects
 
 
-""" Funtionally, the main function
-"""
-
-id_list = get_ids()
-id_iteration = 0
-card_dicts = []
-
-#parse_card_w_id(2739)
 
 
 
-""" """
-for id in id_list:
-    # get the soup
-    response = request_card_w_id(str(id), session).text
-    temp_soup = BeautifulSoup(response, 'html.parser')
+if __name__ == "__main__":
     
-    # tracking progress
-    print(str(id_list.index(id)) + "/" + str(len(id_list)))
-    print("id: {i}".format(i = id))
-    
-    # parse the soup and add it to the list
-    card_dict = parse_card_info(temp_soup)
-    card_dicts.append(card_dict)
+    id_list = get_ids()
+    id_iteration = 0
+    #parse_card_w_id(2739)
 
-    # Output to keep me from wondering if everything is working correctly
-    for key in card_dict:
-        value = card_dict[key]
-        print("{k}: {v}".format(k = key, v = value))
-    print("\n")
-
-# Convert the dictionaries in card_dicts to json and write to json file
-with open("uvs_card_data.json", "w") as json_file:
-    json.dump(card_dicts, json_file)
-
+    mongo_connection = getDatas()
