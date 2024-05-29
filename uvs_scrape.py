@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin python3
 
 # For making requests
 from requests_html import HTMLSession
@@ -10,7 +10,6 @@ from urllib3.connection import HTTPConnection
 
 # JSON
 import json
-from bson import json_util
 
 
 # Functionally, constants for connecting to Mongodb
@@ -221,6 +220,7 @@ def execute_scrape(id_list, session):
         
         # parse the soup and add it to the list
         card_dict = parse_card_info(temp_soup)
+        card_dicts = []
         card_dicts.append(card_dict)
 
         # Output to keep me from wondering if everything is working correctly
@@ -244,4 +244,4 @@ if __name__ == "__main__":
     
     id_list = get_ids()
     id_iteration = 0
-    #parse_card_w_id(2739)
+    parse_card_w_id(2739)
