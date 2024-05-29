@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # For making requests
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
@@ -5,10 +7,6 @@ from bs4 import BeautifulSoup
 # Preventing connection issues from stopping the script
 import socket
 from urllib3.connection import HTTPConnection
-
-# Database
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
 
 # JSON
 import json
@@ -237,18 +235,6 @@ def execute_scrape(id_list, session):
 
     json_file.close()
 
-""" Connects to the mongodb database """
-""" https://stackoverflow.com/questions/22139173/how-to-connect-to-mongo-database-locally-using-python """
-def getDatas():
-    connection = MongoClient(MONGODB_HOST, MONGODB_PORT)
-    collection = connection[DB_NAME][COLLECTION_NAME]
-    projects = collection.find()
-    json_projects = []
-    for project in projects:
-        json_projects.append(project)
-    json_projects = json.dumps(json_projects, default=json_util.default)
-    connection.close()
-    return json_projects
 
 
 
@@ -259,5 +245,3 @@ if __name__ == "__main__":
     id_list = get_ids()
     id_iteration = 0
     #parse_card_w_id(2739)
-
-    mongo_connection = getDatas()
