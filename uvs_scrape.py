@@ -123,6 +123,7 @@ def parse_card_info(soup):
     card_type = ""
     card_rarity = ""
     legality = ""
+    print("|" + attack_info + "|")
 
     
     if len(cd1_parsed) > 3:
@@ -148,11 +149,15 @@ def parse_card_info(soup):
         vitality = cd3_parsed[4].split(":")[2].strip()[-2:]
     
     # handles attack information if attack
-    if attack_info != "/" and len(attack_info.split(" ")) < 3:
+    if attack_info != "/": 
+        '''and len(attack_info.split(" ")) < 3'''
+        print(attack_info != "/")
         speed = attack_info.split(" ")[0]
+        #print(speed)
         zone = attack_info.split(" ")[1]
+        #print(zone)
         damage = attack_info.split(" ")[3]
-
+        #print(damage)
 
     """ POPULATE THE DICTIONARY FOR RETURN
     """
@@ -198,10 +203,11 @@ def parse_card_w_id(target_card_id):
     response = request_card_w_id(str(target_card_id), session).text
 
     temp_soup = BeautifulSoup(response, 'html.parser')
-    print(temp_soup.select("div.card_infos"))
-    print("***************")
+    #print(temp_soup.select("div.card_infos"))
 
     target_card_info = parse_card_info(temp_soup)
+    print(target_card_info)
+    print("***************")
 
     return target_card_info
 
@@ -244,4 +250,6 @@ if __name__ == "__main__":
     
     id_list = get_ids()
     id_iteration = 0
-    parse_card_w_id(2739)
+    #parse_card_w_id(2740)
+
+    execute_scrape(id_list, )
