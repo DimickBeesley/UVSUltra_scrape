@@ -18,7 +18,7 @@ MONGODB_PORT = 27017
 DB_NAME = "dotdeck"
 COLLECTION_NAME = "uvscards"
 
-# Some black magic that helps keep the connection from dropping while the script scrapes
+# Creating a socket to help keep the connection alive. (Does it mean we're using TCP instead of UDP?)
 HTTPConnection.default_socket_options = (
     HTTPConnection.default_socket_options + [
         (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
@@ -28,12 +28,44 @@ HTTPConnection.default_socket_options = (
 )
 
 
-
-
 session = HTMLSession()
 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"}
 base_url = "https://www.uvsultra.online"
 showcard_url = "/showcard.php?id="
+id_file = "uvs_ids.txt"
+data_file = "uvs_card_data.json"
+
+#TODO: fix the error that makes this not execute.
+def update_ids_file():
+    
+    with open(id_file, "rb") as file:
+        file.seek(-2,2) #move pointer to the second to last byte.
+        while file.read(1) != b'\n':
+            file.seek(-2,1)
+        last_line = file.readline().decode()
+        target_id = int(last_line)
+    
+    target_id = None
+    fail_to_find_count = 0
+
+    with open(id_file, "a") as file:
+        # this line is the problem. we get a request back no matter what. check the contents of the response here instead.
+        while fail_to_find_count >= 100:
+            try:
+                response = request_card_w_id(target_id, session)
+                soup = BeautifulSoup(response, 'html.parser')
+                # this throwing an error determines that there is no card with this id
+                card_name = soup.select("div.card_infos h1")[0].text
+                file.write("/n" + str(target_id))
+                print("target_id=" + str(target_id))
+                
+                target_id = target_id + 1
+                fail_to_find_count = 0
+            except: 
+                fail_to_find_count = fail_to_find_count + 1
+                target_id = target_id + 1
+                continue
+
 
 """ Retrieves ids from premade file. """
 def get_ids():
@@ -53,8 +85,9 @@ def get_ids():
 """ Pass the id in as a string for the sake of typing issues and your sanity.
     This requests all of the relevant data from an individual card. """
 def request_card_w_id(id, sesh):
-    
-    request_url = base_url + showcard_url + id
+        
+
+    request_url = base_url + showcard_url + str(id)
     response = sesh.get(request_url)
 
     return response
@@ -86,7 +119,6 @@ def parse_card_info(soup):
 
     #The different card divisions from the raw HTML
     card_divisions = soup.select("div.card_infos div.card_division")
-    
     #Set/Card number, Card type, Rarity, Format???
     card_division_1 = card_divisions[0].text.strip()  
     #Functionality of the card (enhances, responses, etc.)
@@ -123,7 +155,6 @@ def parse_card_info(soup):
     card_type = ""
     card_rarity = ""
     legality = ""
-    print("|" + attack_info + "|")
 
     
     if len(cd1_parsed) > 3:
@@ -149,15 +180,19 @@ def parse_card_info(soup):
         vitality = cd3_parsed[4].split(":")[2].strip()[-2:]
     
     # handles attack information if attack
-    if attack_info != "/": 
-        '''and len(attack_info.split(" ")) < 3'''
-        print(attack_info != "/")
-        speed = attack_info.split(" ")[0]
-        #print(speed)
-        zone = attack_info.split(" ")[1]
-        #print(zone)
-        damage = attack_info.split(" ")[3]
-        #print(damage)
+
+    try:
+        if attack_info != "/": 
+            '''and len(attack_info.split(" ")) < 3'''
+            print(attack_info != "/")
+            speed = attack_info.split(" ")[0]
+            #print(speed)
+            zone = attack_info.split(" ")[1]
+            #print(zone)
+            damage = attack_info.split(" ")[3]
+            #print(damage)
+    except:
+        speed = zone = damage = "exception"
 
     """ POPULATE THE DICTIONARY FOR RETURN
     """
@@ -203,7 +238,7 @@ def parse_card_w_id(target_card_id):
     response = request_card_w_id(str(target_card_id), session).text
 
     temp_soup = BeautifulSoup(response, 'html.parser')
-    #print(temp_soup.select("div.card_infos"))
+    print(temp_soup.select("div.card_infos"))
 
     target_card_info = parse_card_info(temp_soup)
     print(target_card_info)
@@ -248,8 +283,9 @@ def execute_scrape(id_list, session):
 
 if __name__ == "__main__":
     
-    id_list = get_ids()
-    id_iteration = 0
-    #parse_card_w_id(2740)
+    update_ids_file()
 
-    execute_scrape(id_list, )
+    id_list = get_ids()
+    #parse_card_w_id(1250)
+
+    execute_scrape(id_list, session)
