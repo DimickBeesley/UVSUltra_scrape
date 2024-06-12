@@ -250,6 +250,9 @@ def parse_card_w_id(target_card_id):
 """ Makes calls to the other functions to request all of the card information  
     and save it to a json file in the current directory """
 def execute_scrape(id_list, session):
+    
+    card_dicts = []
+    
     for id in id_list:
         # get the soup
         response = request_card_w_id(str(id), session).text
@@ -261,7 +264,39 @@ def execute_scrape(id_list, session):
         
         # parse the soup and add it to the list
         card_dict = parse_card_info(temp_soup)
-        card_dicts = []
+        card_dicts.append(card_dict)
+
+        # Output to keep me from wondering if everything is working correctly
+        for key in card_dict:
+            value = card_dict[key]
+            print("{k}: {v}".format(k = key, v = value))
+        print("\n")
+
+    print(card_dicts)
+
+    # Convert the dictionaries in card_dicts to json and write to json file
+    with open("uvs_card_data.json", "w") as json_file:
+        json.dump(card_dicts, json_file)
+
+    json_file.close()
+
+""" Makes calls to the other functions to request all of the card information  
+    and save it to a json file in the current directory """
+def scrape_range(id_range, session):
+    
+    card_dicts = []
+    
+    for id in id_range:
+        # get the soup
+        response = request_card_w_id(str(id), session).text
+        soup = BeautifulSoup(response, 'html.parser')
+        
+        # tracking progress
+        print(str(id_range.index(id)) + "/" + str(len(id_range)))
+        print("id: {i}".format(i = id))
+        
+        # parse the soup and add it to the list
+        card_dict = parse_card_info(soup)
         card_dicts.append(card_dict)
 
         # Output to keep me from wondering if everything is working correctly
@@ -280,12 +315,14 @@ def execute_scrape(id_list, session):
 
 
 
-
 if __name__ == "__main__":
     
-    update_ids_file()
+    #update_ids_file()
+
+    #target_range = range(10140, 10143)
+    #scrape_range(target_range, session)
 
     id_list = get_ids()
-    #parse_card_w_id(1250)
-
+    parse_card_w_id(1250)
     execute_scrape(id_list, session)
+
