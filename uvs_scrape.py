@@ -1,4 +1,4 @@
-#!/usr/bin python3
+#!/usr/bin/env python3
 
 # For making requests
 from requests_html import HTMLSession
@@ -39,7 +39,7 @@ data_file = "uvs_card_data.json"
 def update_ids_file():
     
     with open(id_file, "rb") as file:
-        file.seek(-2,2) #move pointer to the second to last byte.
+        file.seek(-2,2) # move pointer to the second to last byte.
         while file.read(1) != b'\n':
             file.seek(-2,1)
         last_line = file.readline().decode()
@@ -250,6 +250,8 @@ def parse_card_w_id(target_card_id):
 """ Makes calls to the other functions to request all of the card information  
     and save it to a json file in the current directory """
 def execute_scrape(id_list, session):
+    card_dicts = []
+    
     for id in id_list:
         # get the soup
         response = request_card_w_id(str(id), session).text
@@ -261,7 +263,6 @@ def execute_scrape(id_list, session):
         
         # parse the soup and add it to the list
         card_dict = parse_card_info(temp_soup)
-        card_dicts = []
         card_dicts.append(card_dict)
 
         # Output to keep me from wondering if everything is working correctly
