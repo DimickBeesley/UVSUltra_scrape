@@ -69,24 +69,24 @@ def update_ids_file():
 """ Retrieves ids from premade file. """
 def get_ids():
 
-    existing_ids = []
+    existing_card_ids = []
     f = open("uvs_ids.txt", "r")
     id_file = f.readlines()
 
     for line in id_file:
-        existing_ids.append(int(line.strip()))
+        existing_card_ids.append(int(line.strip()))
 
     f.close()
 
-    return existing_ids
+    return existing_card_ids
 
 
 """ Pass the id in as a string for the sake of typing issues and your sanity.
     This requests all of the relevant data from an individual card. """
-def request_card_w_id(id, sesh):
+def request_card_w_id(card_id, sesh):
         
 
-    request_url = base_url + showcard_url + str(id)
+    request_url = base_url + showcard_url + str(card_id)
     response = sesh.get(request_url)
 
     return response
@@ -97,9 +97,9 @@ def request_cards_w_ids(list_of_ids, sesh):
 
     list_o_returns = []
 
-    for id in list_of_ids:
+    for card_id in list_of_ids:
         # Might want to make sure that it is clear that we need to be passing strings into this call
-        current = request_card_w_id(id, sesh)
+        current = request_card_w_id(card_id, sesh)
         if (current == None): continue
         list_o_returns.append(current)
 
@@ -107,7 +107,7 @@ def request_cards_w_ids(list_of_ids, sesh):
 
 
 """ Takes in the soup. Returns the information as a dictionary """
-def parse_card_info(soup):
+def parse_card_info(soup, card_id):
     
     """ BREAK UP THE RAW HTML FOR EASIER PARSING 
     """
@@ -196,6 +196,7 @@ def parse_card_info(soup):
     """ POPULATE THE DICTIONARY FOR RETURN
     """
     card = {
+        "card-id"    : card_id,
         "name"       : card_name,
         "image"      : card_image_src,
         "set-info"   : setinfo,
@@ -239,7 +240,7 @@ def parse_card_w_id(target_card_id):
     temp_soup = BeautifulSoup(response, 'html.parser')
     print(temp_soup.select("div.card_infos"))
 
-    target_card_info = parse_card_info(temp_soup)
+    target_card_info = parse_card_info(temp_soup, target_card_id)
     print(target_card_info)
     print("***************")
 
@@ -251,17 +252,16 @@ def parse_card_w_id(target_card_id):
 def execute_scrape(id_list, session):
     card_dicts = []
     
-    for id in id_list:
+    for card_id in id_list:
         # get the soup
-        response = request_card_w_id(str(id), session).text
+        response = request_card_w_id(str(card_id), session).text
         temp_soup = BeautifulSoup(response, 'html.parser')
         
         # tracking progress
-        print(str(id_list.index(id)) + "/" + str(len(id_list)))
-        print("id: {i}".format(i = id))
+        print(str(id_list.index(card_id)) + "/" + str(len(id_list)))
         
         # parse the soup and add it to the list
-        card_dict = parse_card_info(temp_soup)
+        card_dict = parse_card_info(temp_soup, card_id)
         card_dicts.append(card_dict)
 
         # Output to keep me from wondering if everything is working correctly
