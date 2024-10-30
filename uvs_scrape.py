@@ -35,7 +35,7 @@ showcard_url = "/showcard.php?id="
 id_file = "uvs_ids.txt"
 data_file = "uvs_card_data.json"
 
-#TODO: fix the error that makes this not execute.
+
 def update_ids_file():
     
     with open(id_file, "rb") as file:
@@ -65,7 +65,6 @@ def update_ids_file():
                 fail_to_find_count = fail_to_find_count + 1
                 target_id = target_id + 1
                 continue
-
 
 """ Retrieves ids from premade file. """
 def get_ids():
