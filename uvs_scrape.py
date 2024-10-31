@@ -8,9 +8,6 @@ from bs4 import BeautifulSoup
 import socket
 from urllib3.connection import HTTPConnection
 
-# JSON
-import json
-
 
 # Functionally, constants for connecting to Mongodb
 MONGODB_HOST = 'localhost'
@@ -28,7 +25,6 @@ HTTPConnection.default_socket_options = (
 )
 
 
-session = HTMLSession()
 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"}
 base_url = "https://www.uvsultra.online"
 showcard_url = "/showcard.php?id="
@@ -36,7 +32,7 @@ id_file = "uvs_ids.txt"
 data_file = "uvs_card_data.json"
 
 
-def update_ids_file():
+'''def update_ids_file():
     
     with open(id_file, "rb") as file:
         file.seek(-2,2) # move pointer to the second to last byte.
@@ -64,7 +60,7 @@ def update_ids_file():
             except: 
                 fail_to_find_count = fail_to_find_count + 1
                 target_id = target_id + 1
-                continue
+                continue'''
 
 """ Retrieves ids from premade file. """
 def get_ids():
@@ -233,7 +229,7 @@ def parse_card_division(card_division):
 
 
 """ Run the script for one id only for the sake of testing mostly """
-def parse_card_w_id(target_card_id):
+def parse_card_w_id(target_card_id, session):
     
     response = request_card_w_id(str(target_card_id), session).text
 
@@ -249,9 +245,10 @@ def parse_card_w_id(target_card_id):
 
 """ Makes calls to the other functions to request all of the card information  
     and save it to a json file in the current directory """
-def execute_scrape(id_list, session):
+def execute_scrape(id_list):
     card_dicts = []
-    
+    session = HTMLSession()
+
     for card_id in id_list:
         # get the soup
         response = request_card_w_id(str(card_id), session).text
@@ -270,11 +267,9 @@ def execute_scrape(id_list, session):
             print("{k}: {v}".format(k = key, v = value))
         print("\n")
 
-    # Convert the dictionaries in card_dicts to json and write to json file
-    with open("uvs_card_data.json", "w") as json_file:
-        json.dump(card_dicts, json_file)
+    return card_dicts
 
-    json_file.close()
+    
 
 
 
@@ -283,9 +278,8 @@ def execute_scrape(id_list, session):
 
 if __name__ == "__main__":
     
-    update_ids_file()
 
     id_list = get_ids()
     #parse_card_w_id(1250)
 
-    execute_scrape(id_list, session)
+    execute_scrape(id_list)
